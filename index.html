@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Letreiro V4 - Party Mode</title>
+    <title>Letreiro V5 - Music Mode</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         body {
@@ -26,6 +26,33 @@
             height: 100%;
             pointer-events: none;
             z-index: 99;
+        }
+
+        /* Player do YouTube invisível */
+        #player {
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+        }
+
+        /* Tela de Bloqueio para liberar o Áudio */
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 99999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #0f0;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            flex-direction: column;
+            text-align: center;
         }
 
         .marquee-container {
@@ -55,28 +82,20 @@
                 transform: translate3d(-100%, 0, 0);
             }
         }
-
-        #debug-console {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(50, 0, 0, 0.8);
-            color: #fff;
-            font-size: 14px;
-            z-index: 9999;
-            display: none;
-            padding: 10px;
-        }
     </style>
 </head>
 
 <body>
-    <div id="debug-console"></div>
+    <div id="overlay" onclick="iniciarSistema()">
+        <div>TOQUE PARA INICIAR<br><span style="font-size:12px; color:#666">(Necessário para liberar o áudio)</span>
+        </div>
+    </div>
+
+    <div id="player"></div>
 
     <div class="marquee-container">
         <div class="marquee-text" id="texto">
-            INICIANDO...
+            CARREGANDO...
         </div>
     </div>
 
@@ -85,35 +104,49 @@
         var BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg";
         var KEY = "mensagem";
         var URL_BASE = "https://kvdb.io/" + BUCKET_ID + "/" + KEY;
+        var MUSIC_ID = "DOWyEY-VfIw"; // ID do vídeo do YouTube
 
         var textoAtual = "";
         var velocidadeAtual = "";
+        var player; // Variável do YouTube
+        var audioLiberado = false;
+        var musicaTocando = false;
 
-        function logError(msg) {
-            var debugEl = document.getElementById('debug-console');
-            debugEl.style.display = 'block';
-            debugEl.innerHTML += "ERRO: " + msg + "<br>";
+        // --- YOUTUBE API ---
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '1', width: '1',
+                videoId: MUSIC_ID,
+                playerVars: { 'playsinline': 1, 'controls': 0, 'loop': 1 }
+            });
         }
-        window.onerror = function (message) { logError(message); };
+
+        // Função chamada ao clicar na tela preta inicial
+        function iniciarSistema() {
+            document.getElementById('overlay').style.display = 'none';
+            audioLiberado = true;
+            // Tenta dar um play mudo só para "aquecer" o motor de áudio do Android
+            if (player && player.playVideo) {
+                player.mute();
+                player.playVideo();
+                setTimeout(function () { player.pauseVideo(); player.unMute(); }, 500);
+            }
+            verificarDados(); // Já busca o texto imediatamente
+        }
 
         function dispararConfete() {
-            if (typeof confetti === 'undefined') { console.log("Lib confete não carregou"); return; }
+            if (typeof confetti === 'undefined') return;
             var duration = 3 * 1000;
             var end = Date.now() + duration;
-
             (function frame() {
-                confetti({
-                    particleCount: 5, angle: 60, spread: 55, origin: { x: 0 },
-                    colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00']
-                });
-                confetti({
-                    particleCount: 5, angle: 120, spread: 55, origin: { x: 1 },
-                    colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00']
-                });
-
-                if (Date.now() < end) {
-                    requestAnimationFrame(frame);
-                }
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#f00', '#0f0', '#00f'] });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#f00', '#0f0', '#00f'] });
+                if (Date.now() < end) requestAnimationFrame(frame);
             }());
         }
 
@@ -121,42 +154,52 @@
             var urlComCacheBuster = URL_BASE + "?t=" + new Date().getTime();
 
             fetch(urlComCacheBuster)
-                .then(function (response) { return response.text(); })
+                .then(function (r) { return r.text(); })
                 .then(function (dadosRaw) {
                     var dados;
                     try { dados = JSON.parse(dadosRaw); }
                     catch (e) { dados = { texto: dadosRaw, velocidade: 15 }; }
 
-                    // 1. Atualiza o Texto se mudou
+                    // ATUALIZAÇÃO DO TEXTO
                     if (dados.texto && dados.texto !== textoAtual) {
                         textoAtual = dados.texto;
                         document.getElementById('texto').innerText = textoAtual;
 
-                        // --- NOVA LÓGICA DE GATILHO ---
-                        var t = textoAtual.toLowerCase().trim(); // Limpa espaços nas pontas e põe minúsculo
+                        var t = textoAtual.toLowerCase().trim();
 
-                        // Verifica se é "te amo" OU "teamo"
+                        // --- LÓGICA DO GATILHO (CONFETE + MÚSICA) ---
                         if (t === "te amo" || t === "teamo") {
-                            console.log("Gatilho de amor acionado! <3");
+                            // Se caiu aqui, solta confete
                             dispararConfete();
+
+                            // E toca música (se já não estiver tocando)
+                            if (audioLiberado && player && player.playVideo && !musicaTocando) {
+                                console.log("Tocando música...");
+                                player.seekTo(0); // Volta pro início
+                                player.setVolume(100);
+                                player.playVideo();
+                                musicaTocando = true;
+                            }
+                        } else {
+                            // Se o texto NÃO for "te amo", PARA a música imediatamente
+                            if (musicaTocando && player && player.pauseVideo) {
+                                console.log("Parando música...");
+                                player.pauseVideo();
+                                musicaTocando = false;
+                            }
                         }
-                        // ------------------------------
                     }
 
-                    // 2. Atualiza a Velocidade se mudou
+                    // ATUALIZAÇÃO DA VELOCIDADE
                     if (dados.velocidade && String(dados.velocidade) !== String(velocidadeAtual)) {
                         velocidadeAtual = dados.velocidade;
-                        var el = document.getElementById('texto');
-                        el.style.animationDuration = velocidadeAtual + 's';
+                        document.getElementById('texto').style.animationDuration = velocidadeAtual + 's';
                     }
                 })
-                .catch(function (error) { console.log("Erro silencioso rede"); });
+                .catch(function (e) { console.log("Erro: " + e); });
         }
 
-        try {
-            verificarDados();
-            setInterval(verificarDados, 5000);
-        } catch (e) { logError("Falha crítica: " + e.message); }
+        setInterval(verificarDados, 5000);
     </script>
 </body>
 

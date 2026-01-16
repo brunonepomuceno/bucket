@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Letreiro Digital</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .marquee-container {
+            white-space: nowrap;
+            overflow: hidden;
+            position: absolute;
+            width: 100%;
+        }
+
+        .marquee-text {
+            display: inline-block;
+            font-size: 25vw;
+            /* Ajustado para preencher mais */
+            font-weight: bold;
+            color: #0f0;
+            text-shadow: 0 0 10px #0f0;
+            padding-left: 100%;
+            /* Animação */
+            animation: scroll-left 12s linear infinite;
+            transform: translate3d(0, 0, 0);
+        }
+
+        @keyframes scroll-left {
+            0% {
+                transform: translate3d(0, 0, 0);
+            }
+
+            100% {
+                transform: translate3d(-100%, 0, 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="marquee-container">
+        <div class="marquee-text" id="texto">
+            CARREGANDO...
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURAÇÃO ---
+        const BUCKET_ID = "MxtEJM3bdXd4BpKuwHKwGR"; // <--- COLOQUE SEU ID AQUI
+        const KEY = "mensagem";
+        const URL = `https://kvdb.io/${BUCKET_ID}/${KEY}`;
+
+        let textoAtual = "";
+
+        async function verificarTexto() {
+            try {
+                // Busca o texto na nuvem
+                const response = await fetch(URL);
+                if (response.ok) {
+                    const novoTexto = await response.text();
+
+                    // Só atualiza se o texto mudou (para não resetar animação à toa)
+                    // E garante que não está vazio
+                    if (novoTexto && novoTexto !== textoAtual) {
+                        textoAtual = novoTexto;
+                        document.getElementById('texto').innerText = textoAtual;
+                        console.log("Texto atualizado para:", textoAtual);
+                    }
+                }
+            } catch (error) {
+                console.error("Erro ao buscar texto:", error);
+            }
+        }
+
+        // Verifica imediatamente e depois a cada 5 segundos
+        verificarTexto();
+        setInterval(verificarTexto, 5000); 
+    </script>
+</body>
+
+</html>

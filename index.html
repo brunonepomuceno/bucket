@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Letreiro V3 - Party Mode</title>
+    <title>Letreiro V4 - Party Mode</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         body {
@@ -18,7 +18,6 @@
             font-family: 'Courier New', Courier, monospace;
         }
 
-        /* O canvas do confete fica por cima de tudo */
         canvas {
             position: absolute;
             top: 0;
@@ -89,8 +88,6 @@
 
         var textoAtual = "";
         var velocidadeAtual = "";
-        // Frase gatilho (sempre em minúsculo aqui para facilitar a comparação)
-        var GATILHO_CONFETE = "te amo julia";
 
         function logError(msg) {
             var debugEl = document.getElementById('debug-console');
@@ -99,28 +96,18 @@
         }
         window.onerror = function (message) { logError(message); };
 
-        // --- FUNÇÃO QUE SOLTA OS CONFETES ---
         function dispararConfete() {
-            // Verifica se a biblioteca carregou antes de tentar usar
             if (typeof confetti === 'undefined') { console.log("Lib confete não carregou"); return; }
-
-            var duration = 3 * 1000; // Duração da animação: 3 segundos
+            var duration = 3 * 1000;
             var end = Date.now() + duration;
 
-            // Lança confetes dos dois lados da tela
             (function frame() {
                 confetti({
-                    particleCount: 5,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0 },
-                    colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00'] // Cores festivas
+                    particleCount: 5, angle: 60, spread: 55, origin: { x: 0 },
+                    colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00']
                 });
                 confetti({
-                    particleCount: 5,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1 },
+                    particleCount: 5, angle: 120, spread: 55, origin: { x: 1 },
                     colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00']
                 });
 
@@ -145,12 +132,12 @@
                         textoAtual = dados.texto;
                         document.getElementById('texto').innerText = textoAtual;
 
-                        // --- VERIFICAÇÃO DO GATILHO ---
-                        // Converte o texto que chegou para minúsculo e remove espaços extras
-                        var textoLimpo = textoAtual.toLowerCase().trim();
+                        // --- NOVA LÓGICA DE GATILHO ---
+                        var t = textoAtual.toLowerCase().trim(); // Limpa espaços nas pontas e põe minúsculo
 
-                        if (textoLimpo === GATILHO_CONFETE) {
-                            console.log("Gatilho acionado! BOOM!");
+                        // Verifica se é "te amo" OU "teamo"
+                        if (t === "te amo" || t === "teamo") {
+                            console.log("Gatilho de amor acionado! <3");
                             dispararConfete();
                         }
                         // ------------------------------

@@ -4,8 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="5">
-    <title>Letreiro Digital</title>
+    <title>Letreiro Debug</title>
     <style>
         body {
             margin: 0;
@@ -45,45 +44,87 @@
                 transform: translate3d(-100%, 0, 0);
             }
         }
+
+        /* Estilo para mostrar o erro se houver */
+        #debug-console {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(50, 0, 0, 0.8);
+            color: #fff;
+            font-size: 14px;
+            z-index: 9999;
+            display: none;
+            padding: 10px;
+            white-space: normal;
+        }
     </style>
 </head>
 
 <body>
+    <div id="debug-console"></div>
+
     <div class="marquee-container">
         <div class="marquee-text" id="texto">
-            AGUARDANDO TEXTO...
+            INICIANDO...
         </div>
     </div>
 
     <script>
         // --- CONFIGURAÇÃO ---
-        const BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg";
-        const KEY = "mensagem";
-        const URL = `https://kvdb.io/${BUCKET_ID}/${KEY}`;
+        var BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg";
+        var KEY = "mensagem";
+        // Adicionei um numero aleatorio para evitar cache do servidor KVDB
+        var URL_BASE = "https://kvdb.io/" + BUCKET_ID + "/" + KEY;
 
-        let textoAtual = "";
+        var textoAtual = "";
 
-        async function verificarTexto() {
-            try {
-                const response = await fetch(URL);
-                if (response.ok) {
-                    const novoTexto = await response.text();
-                    // Atualiza apenas se tiver texto e for diferente do atual
+        // Função para mostrar erros na tela do celular
+        function logError(msg) {
+            var debugEl = document.getElementById('debug-console');
+            debugEl.style.display = 'block';
+            debugEl.innerHTML += "ERRO: " + msg + "<br>";
+        }
+
+        // Intercepta erros globais de script
+        window.onerror = function (message, source, lineno, colno, error) {
+            logError(message);
+        };
+
+        function verificarTexto() {
+            // Usando fetch com sintaxe antiga (.then) para compatibilidade
+            var urlComCacheBuster = URL_BASE + "?t=" + new Date().getTime();
+
+            fetch(urlComCacheBuster)
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error("Status " + response.status);
+                    }
+                    return response.text();
+                })
+                .then(function (novoTexto) {
                     if (novoTexto && novoTexto !== textoAtual) {
                         textoAtual = novoTexto;
                         document.getElementById('texto').innerText = textoAtual;
                     }
-                }
-            } catch (error) {
-                console.error("Erro ao buscar texto:", error);
-                // ISSO VAI MOSTRAR O ERRO NA TELA DO CELULAR:
-                document.getElementById('texto').innerText = "ERRO: " + error.message;
-                document.getElementById('texto').style.color = "red";
-            }
+                })
+                .catch(function (error) {
+                    // Se der erro de rede ou certificado, vai aparecer aqui
+                    logError(error.message);
+                    // Tenta mostrar o erro no letreiro também para ficar bem visível
+                    document.getElementById('texto').innerText = "ERRO: " + error.message;
+                    document.getElementById('texto').style.color = "red";
+                });
         }
 
-        verificarTexto();
-        setInterval(verificarTexto, 5000); 
+        // Tenta rodar a primeira vez
+        try {
+            verificarTexto();
+            setInterval(verificarTexto, 5000);
+        } catch (e) {
+            logError("Falha crítica: " + e.message);
+        }
     </script>
 </body>
 

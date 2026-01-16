@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="5">
     <title>Letreiro Digital</title>
     <style>
         body {
@@ -75,6 +76,9 @@
                 }
             } catch (error) {
                 console.error("Erro ao buscar texto:", error);
+                // ISSO VAI MOSTRAR O ERRO NA TELA DO CELULAR:
+                document.getElementById('texto').innerText = "ERRO: " + error.message;
+                document.getElementById('texto').style.color = "red";
             }
         }
 

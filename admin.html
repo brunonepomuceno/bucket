@@ -1,79 +1,58 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle do Letreiro</title>
+    <title>CMS Letreiro</title>
     <style>
-        body {
-            font-family: sans-serif;
-            background: #222;
-            color: #fff;
-            padding: 2rem;
-            text-align: center;
-        }
-
-        input {
-            padding: 15px;
-            font-size: 1.2rem;
-            width: 80%;
-            border-radius: 5px;
-            border: none;
-            margin-bottom: 20px;
-        }
-
-        button {
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            background: #0f0;
-            color: #000;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        button:active {
-            background: #0a0;
-        }
-
-        .status {
-            margin-top: 20px;
-            color: #aaa;
-        }
+        body { font-family: sans-serif; background: #222; color: #fff; padding: 2rem; max-width: 600px; margin: 0 auto; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { padding: 15px; font-size: 1.2rem; width: 100%; box-sizing: border-box; border-radius: 5px; border: none; margin-bottom: 20px; }
+        button { padding: 15px 30px; font-size: 1.2rem; width: 100%; background: #0f0; color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:active { background: #0a0; }
+        .status { margin-top: 20px; color: #aaa; text-align: center; }
     </style>
 </head>
-
 <body>
-    <h1>Parabéns Juliana 🎉 🎂 🥳 🥂 🍾 🎊 🎈 🎁 💖 💝</h1>
-    <input type="text" id="inputTexto" placeholder="Digite a nova mensagem..." value="PARABÉNS JULIANA!">
-    <br>
-    <button onclick="enviarTexto()">ATUALIZAR LETREIRO</button>
+    <h1>Configurar Letreiro</h1>
+    
+    <label>Mensagem:</label>
+    <input type="text" id="inputTexto" placeholder="Digite a mensagem..." value="PARABÉNS JULIANA!">
+    
+    <label>Velocidade (segundos):</label>
+    <input type="number" id="inputVelocidade" value="15" min="5" max="100">
+
+    <button onclick="enviarDados()">ATUALIZAR TUDO</button>
     <p class="status" id="status">Aguardando...</p>
 
     <script>
         // --- CONFIGURAÇÃO ---
-        // Peguei este ID direto do seu print
-        const BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg";
+        const BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg"; 
         const KEY = "mensagem";
         const URL = `https://kvdb.io/${BUCKET_ID}/${KEY}`;
 
-        async function enviarTexto() {
+        async function enviarDados() {
             const texto = document.getElementById('inputTexto').value;
+            const velocidade = document.getElementById('inputVelocidade').value;
             const btn = document.querySelector('button');
             const status = document.getElementById('status');
+
+            // Cria um pacote de dados (JSON) com as duas informações
+            const dados = {
+                texto: texto,
+                velocidade: velocidade
+            };
 
             btn.disabled = true;
             status.innerText = "Enviando...";
 
             try {
-                // Como é 'public write', não precisa de headers de autorização
                 await fetch(URL, {
                     method: 'POST',
-                    body: texto
+                    // Envia como JSON String
+                    body: JSON.stringify(dados)
                 });
-                status.innerText = "Sucesso! O letreiro vai mudar em até 30s.";
+                status.innerText = "Sucesso! O letreiro vai atualizar em instantes.";
                 status.style.color = "#0f0";
             } catch (error) {
                 status.innerText = "Erro ao enviar.";
@@ -84,5 +63,4 @@
         }
     </script>
 </body>
-
 </html>

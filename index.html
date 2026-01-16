@@ -1,116 +1,72 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
     <title>Parabéns Juliana</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         body {
-            margin: 0;
-            padding: 0;
-            background-color: #000;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
+            margin: 0; padding: 0; background-color: #000; overflow: hidden;
+            display: flex; align-items: center; justify-content: center; height: 100vh;
             font-family: 'Courier New', Courier, monospace;
         }
-
         canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 99;
+            position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 99;
         }
+        #player { position: absolute; top: -9999px; left: -9999px; }
 
-        #player {
-            position: absolute;
-            top: -9999px;
-            left: -9999px;
-        }
-
-        /* Estilo do GIF Surpresa */
+        /* O GIF começa OBRIGATORIAMENTE oculto */
         #gif-surpresa {
             position: absolute;
-            z-index: 50;
-            /* Fica atrás do confete (99) mas na frente do fundo */
-            display: none;
-            /* Começa escondido */
-            max-width: 80%;
-            /* Não ocupa a tela toda para não esconder 100% do texto */
+            z-index: 50; 
+            display: none; 
+            max-width: 80%; 
             max-height: 80vh;
             border-radius: 15px;
             box-shadow: 0 0 50px rgba(0, 255, 0, 0.5);
-            /* Glow verde para combinar */
         }
 
         #overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 99999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #0f0;
-            font-size: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            flex-direction: column;
-            text-align: center;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 99999;
+            display: flex; justify-content: center; align-items: center;
+            color: #0f0; font-size: 20px; font-weight: bold; cursor: pointer;
+            flex-direction: column; text-align: center;
         }
 
         .marquee-container {
-            white-space: nowrap;
-            overflow: hidden;
-            position: absolute;
-            width: 100%;
+            white-space: nowrap; overflow: hidden; position: absolute; width: 100%;
             z-index: 60;
-            /* Texto fica na frente do GIF */
         }
-
         .marquee-text {
             display: inline-block;
             font-size: 25vw;
-            font-weight: bold;
-            color: #0f0;
-            text-shadow: 0 0 10px #0f0;
+            font-weight: bold; color: #0f0; text-shadow: 0 0 10px #0f0;
             padding-left: 100%;
             animation: scroll-left 15s linear infinite;
             transform: translate3d(0, 0, 0);
         }
-
         @keyframes scroll-left {
-            0% {
-                transform: translate3d(0, 0, 0);
-            }
-
-            100% {
-                transform: translate3d(-100%, 0, 0);
-            }
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
         }
     </style>
 </head>
-
 <body>
     <div id="overlay" onclick="iniciarSistema()">
-        <div>TOQUE PARA INICIAR<br><span style="font-size:12px; color:#666">(Necessário para liberar o áudio)</span>
-        </div>
+        <div>TOQUE PARA INICIAR<br><span style="font-size:12px; color:#666">(Necessário para liberar o áudio)</span></div>
     </div>
 
     <div id="player"></div>
-
+    
     <img id="gif-surpresa" src="juliana.gif" alt="Surpresa">
-
+    
     <div class="marquee-container">
         <div class="marquee-text" id="texto">
             Parabéns Juliana 🎉 🎂 🥳 🥂 🍾 🎊 🎈 🎁 💖 💝
@@ -119,15 +75,16 @@
 
     <script>
         // --- CONFIGURAÇÃO ---
-        var BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg";
+        var BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg"; 
         var KEY = "mensagem";
         var URL_BASE = "https://kvdb.io/" + BUCKET_ID + "/" + KEY;
-        var MUSIC_ID = "DOWyEY-VfIw";
+        var MUSIC_ID = "DOWyEY-VfIw"; 
 
-        // Define o texto inicial na variável também, para evitar "piscada" se o banco demorar
-        var textoAtual = "Parabéns Juliana 🎉 🎂 🥳 🥂 🍾 🎊 🎈 🎁 💖 💝";
+        // Estado Inicial
+        var textoPadrao = "Parabéns Juliana 🎉 🎂 🥳 🥂 🍾 🎊 🎈 🎁 💖 💝";
+        var textoAtual = textoPadrao; 
         var velocidadeAtual = "";
-        var player;
+        var player; 
         var audioLiberado = false;
         var musicaTocando = false;
 
@@ -146,46 +103,57 @@
         function iniciarSistema() {
             document.getElementById('overlay').style.display = 'none';
             audioLiberado = true;
-            if (player && player.playVideo) {
+            // "Acorda" o player de áudio do Android
+            if(player && player.playVideo) {
                 player.mute(); player.playVideo();
-                setTimeout(function () { player.pauseVideo(); player.unMute(); }, 500);
+                setTimeout(function(){ player.pauseVideo(); player.unMute(); }, 500);
             }
-            verificarDados();
+            // Força uma verificação imediata
+            verificarDados(); 
         }
 
         function dispararConfete() {
             if (typeof confetti === 'undefined') return;
             var duration = 3 * 1000; var end = Date.now() + duration;
             (function frame() {
-                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#f00', '#0f0', '#00f'] });
-                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#f00', '#0f0', '#00f'] });
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#f00','#0f0','#00f'] });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#f00','#0f0','#00f'] });
                 if (Date.now() < end) requestAnimationFrame(frame);
             }());
         }
 
         function verificarDados() {
+            // ANTI-CACHE NA REQUISIÇÃO: Adiciona timestamp aleatório
             var urlComCacheBuster = URL_BASE + "?t=" + new Date().getTime();
-
-            fetch(urlComCacheBuster)
-                .then(function (r) { return r.text(); })
-                .then(function (dadosRaw) {
+            
+            fetch(urlComCacheBuster, { cache: "no-store" }) // Força no-store
+                .then(function(r) { return r.text(); })
+                .then(function(dadosRaw) {
                     var dados;
-                    try { dados = JSON.parse(dadosRaw); }
+                    try { dados = JSON.parse(dadosRaw); } 
                     catch (e) { dados = { texto: dadosRaw, velocidade: 15 }; }
 
-                    if (dados.texto && dados.texto !== textoAtual) {
-                        textoAtual = dados.texto;
+                    // Verifica se temos dados válidos, senão usa o padrão
+                    var novoTexto = dados.texto ? dados.texto : textoPadrao;
+
+                    if (novoTexto !== textoAtual) {
+                        textoAtual = novoTexto;
                         document.getElementById('texto').innerText = textoAtual;
 
-                        var t = textoAtual.toLowerCase().trim();
+                        // --- NORMALIZAÇÃO DO GATILHO ---
+                        // Remove espaços em branco e deixa minúsculo
+                        // Ex: "Te Amo" vira "teamo", "te amo" vira "teamo"
+                        var tLimpo = textoAtual.toLowerCase().replace(/\s/g, '');
                         var gifEl = document.getElementById('gif-surpresa');
-
-                        // --- LÓGICA DO GATILHO COMPLETO ---
-                        if (t === "te amo" || t === "teamo") {
+                        
+                        if (tLimpo === "teamo") {
+                            // === ESTADO: AMOR ATIVADO ===
+                            console.log("Modo Te Amo: ATIVADO");
+                            
                             // 1. Solta Confete
                             dispararConfete();
-
-                            // 2. Mostra o GIF
+                            
+                            // 2. Mostra GIF
                             gifEl.style.display = "block";
 
                             // 3. Toca Música
@@ -194,11 +162,13 @@
                                 musicaTocando = true;
                             }
                         } else {
-                            // SE NÃO FOR O GATILHO:
-                            // Esconde o GIF
+                            // === ESTADO: AMOR DESATIVADO (LIMPEZA) ===
+                            console.log("Modo Te Amo: DESATIVADO");
+
+                            // 1. Esconde GIF
                             gifEl.style.display = "none";
 
-                            // Para a música
+                            // 2. Para Música
                             if (musicaTocando && player && player.pauseVideo) {
                                 player.pauseVideo();
                                 musicaTocando = false;
@@ -206,16 +176,17 @@
                         }
                     }
 
+                    // Atualiza velocidade
                     if (dados.velocidade && String(dados.velocidade) !== String(velocidadeAtual)) {
                         velocidadeAtual = dados.velocidade;
                         document.getElementById('texto').style.animationDuration = velocidadeAtual + 's';
                     }
                 })
-                .catch(function (e) { console.log("Erro: " + e); });
+                .catch(function(e) { console.log("Erro de conexão: " + e); });
         }
 
+        // Verifica a cada 5 segundos
         setInterval(verificarDados, 5000);
     </script>
 </body>
-
 </html>

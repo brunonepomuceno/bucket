@@ -27,12 +27,10 @@
         .marquee-text {
             display: inline-block;
             font-size: 25vw;
-            /* Ajustado para preencher mais */
             font-weight: bold;
             color: #0f0;
             text-shadow: 0 0 10px #0f0;
             padding-left: 100%;
-            /* Animação */
             animation: scroll-left 12s linear infinite;
             transform: translate3d(0, 0, 0);
         }
@@ -52,13 +50,13 @@
 <body>
     <div class="marquee-container">
         <div class="marquee-text" id="texto">
-            CARREGANDO...
+            AGUARDANDO TEXTO...
         </div>
     </div>
 
     <script>
         // --- CONFIGURAÇÃO ---
-        const BUCKET_ID = "MxtEJM3bdXd4BpKuwHKwGR"; // <--- COLOQUE SEU ID AQUI
+        const BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg";
         const KEY = "mensagem";
         const URL = `https://kvdb.io/${BUCKET_ID}/${KEY}`;
 
@@ -66,17 +64,13 @@
 
         async function verificarTexto() {
             try {
-                // Busca o texto na nuvem
                 const response = await fetch(URL);
                 if (response.ok) {
                     const novoTexto = await response.text();
-
-                    // Só atualiza se o texto mudou (para não resetar animação à toa)
-                    // E garante que não está vazio
+                    // Atualiza apenas se tiver texto e for diferente do atual
                     if (novoTexto && novoTexto !== textoAtual) {
                         textoAtual = novoTexto;
                         document.getElementById('texto').innerText = textoAtual;
-                        console.log("Texto atualizado para:", textoAtual);
                     }
                 }
             } catch (error) {
@@ -84,7 +78,6 @@
             }
         }
 
-        // Verifica imediatamente e depois a cada 5 segundos
         verificarTexto();
         setInterval(verificarTexto, 5000); 
     </script>

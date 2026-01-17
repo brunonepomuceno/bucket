@@ -4,79 +4,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
     <title>Surpresa da Ju! 🎉</title>
+
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎂</text></svg>">
+
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.1.1/model-viewer.min.js"></script>
+
     <style>
+        /* ESTILO GLOBAL - Igual ao Index */
         body {
             margin: 0;
-            background-color: #1a1a1a;
-            color: #fff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #000;
+            /* Fundo Preto */
+            font-family: 'Courier New', Courier, monospace;
+            /* Fonte Hacker */
             text-align: center;
-            overflow-x: hidden;
-            line-height: 1.5;
+            color: #0f0;
+            /* Texto Verde */
+        }
+
+        /* O visualizador com fundo preto para integrar */
+        model-viewer {
+            width: 100%;
+            height: 80vh;
+            margin-top: 10px;
+            background-color: #000;
         }
 
         h1 {
             color: #0f0;
-            margin-top: 2rem;
-            font-size: 2rem;
+            margin-top: 20px;
+            text-shadow: 0 0 10px #0f0;
+            /* Glow neon */
+            text-transform: uppercase;
         }
 
         p {
-            color: #ccc;
-            padding: 0 1rem;
-            max-width: 400px;
-            margin: 0 auto 2rem;
+            color: #fff;
+            /* Texto secundário branco para leitura */
+            padding: 0 20px;
+            font-size: 0.9rem;
         }
 
-        model-viewer {
-            width: 100%;
-            height: 70vh;
-            background-color: #1a1a1a;
-        }
-
-        /* Botão de AR personalizado seguindo o padrão admin/index */
+        /* ESTILO DO BOTÃO - Igual ao Admin */
         .btn-ar {
             background: #0f0;
             color: #000;
-            padding: 14px 28px;
-            border-radius: 50px;
+            padding: 15px 30px;
+            border-radius: 5px;
+            /* Bordas mais quadradas */
             text-decoration: none;
             font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
             display: inline-block;
-            margin-bottom: 2rem;
-            border: 2px solid #fff;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .btn-ar:hover {
-            transform: scale(1.05);
-            background: #0d0;
-            box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
+            margin-bottom: 30px;
+            border: none;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+            text-transform: uppercase;
         }
 
         .btn-ar:active {
-            transform: scale(0.98);
+            background: #0a0;
+        }
+
+        /* BARRA DE PROGRESSO CUSTOMIZADA (VERDE) */
+        .progress-bar {
+            display: block;
+            width: 33%;
+            height: 10%;
+            max-height: 2%;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate3d(-50%, -50%, 0);
+            border-radius: 2px;
+            border: 1px solid #0f0;
+            background-color: #000;
+        }
+
+        .progress-bar.hide {
+            visibility: hidden;
+            transition: visibility 0.3s;
+        }
+
+        .update-bar {
+            background-color: #0f0;
+            /* Barra Verde */
+            width: 0%;
+            height: 100%;
+            float: left;
+            transition: width 0.3s;
+        }
+
+        /* Mãozinha indicando AR (Branca para contraste) */
+        #ar-prompt {
+            position: absolute;
+            left: 50%;
+            bottom: 175px;
+            animation: notify 3s infinite;
+            display: none;
+            transform: translateX(-50%);
+            pointer-events: none;
+            filter: invert(1);
+        }
+
+        @keyframes notify {
+            0% {
+                transform: translateX(-50%) scale(1);
+            }
+
+            50% {
+                transform: translateX(-50%) scale(1.1);
+            }
+
+            100% {
+                transform: translateX(-50%) scale(1);
+            }
         }
     </style>
 </head>
 
 <body>
     <h1>Parabéns Ju! 🎂</h1>
-    <p>Aponte a câmera para uma mesa vazia para colocar o bolo!</p>
+    <p>Aponte a câmera para uma mesa vazia.</p>
 
     <model-viewer src="bolo.glb" ios-src="bolo.usdz" alt="Bolo de Chocolate com Cerejas" ar
-        ar-modes="webxr scene-viewer quick-look" camera-controls auto-rotate shadow-intensity="1" shadow-softness="1">
+        ar-modes="scene-viewer webxr quick-look" camera-controls tone-mapping="neutral" shadow-intensity="1"
+        camera-orbit="-2593deg 78.92deg 1.823m" field-of-view="30deg" auto-rotate camera-target="-0.05m 0.04953m 0.1m"
+        exposure="2" shadow-softness="1">
 
         <div slot="ar-button" class="btn-ar">
-            👋 Clique aqui para ver na sua mesa!
+            [ COLOCAR BOLO NA MESA ]
         </div>
+
+        <div class="progress-bar hide" slot="progress-bar">
+            <div class="update-bar"></div>
+        </div>
+
+        <div id="ar-prompt">
+            <img src="https://modelviewer.dev/shared-assets/icons/hand.png" width="50">
+        </div>
+
     </model-viewer>
+
+    <script>
+        const modelViewer = document.querySelector('model-viewer');
+        const progress = document.querySelector('.progress-bar');
+        const bar = document.querySelector('.update-bar');
+
+        modelViewer.addEventListener('progress', (event) => {
+            const { totalProgress } = event.detail;
+            progress.classList.toggle('hide', totalProgress === 1);
+            bar.style.width = `${totalProgress * 100}%`;
+        });
+    </script>
 </body>
 
 </html>

@@ -69,21 +69,15 @@
             text-align: center;
         }
 
-        /* --- BOTÃO SECRETO --- */
         #botao-secreto {
             position: fixed;
             bottom: 0;
             right: 0;
             width: 80px;
-            /* Tamanho da área clicável */
             height: 80px;
             z-index: 999999;
-            /* Fica acima de tudo, até do overlay */
             cursor: pointer;
-
-            /* Debug visual: mude a opacidade para 0.5 se quiser ver onde ele está */
             background-color: rgba(255, 255, 255, 0.0);
-            opacity: 0;
         }
 
         .marquee-container {
@@ -126,7 +120,6 @@
     <a id="botao-secreto" href="https://brunonepomuceno.github.io/bucket/admin" title="Ir para Admin"></a>
 
     <div id="player"></div>
-
     <img id="gif-surpresa" src="juliana.gif" alt="Surpresa">
 
     <div class="marquee-container">
@@ -136,16 +129,20 @@
     </div>
 
     <script>
+        // --- CONFIGURAÇÃO ---
         var BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg";
         var KEY = "mensagem";
         var URL_BASE = "https://kvdb.io/" + BUCKET_ID + "/" + KEY;
 
-        var MUSIC_ID = "SRVxRUJxITY";
-        var START_TIME = 14;
-
+        // Variáveis de Estado
         var textoPadrao = "Parabéns Juliana 🎉 🎂 🥳 🥂 🍾 🎊 🎈 🎁 💖 💝";
         var textoAtual = textoPadrao;
         var velocidadeAtual = "";
+
+        // Estado da Música e Confete
+        var currentVideoId = "SRVxRUJxITY"; // ID padrão (Overmono)
+        var lastConfeteToken = 0; // Para controlar o botão de confete manual
+
         var player;
         var audioLiberado = false;
         var musicaTocando = false;
@@ -157,7 +154,7 @@
 
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
-                height: '1', width: '1', videoId: MUSIC_ID,
+                height: '1', width: '1', videoId: currentVideoId,
                 playerVars: { 'playsinline': 1, 'controls': 0, 'loop': 1 }
             });
         }
@@ -166,8 +163,7 @@
             document.getElementById('overlay').style.display = 'none';
             audioLiberado = true;
             if (player && player.playVideo) {
-                player.mute();
-                player.playVideo();
+                player.mute(); player.playVideo();
                 setTimeout(function () { player.pauseVideo(); player.unMute(); }, 1000);
             }
             verificarDados();
@@ -193,6 +189,27 @@
                     try { dados = JSON.parse(dadosRaw); }
                     catch (e) { dados = { texto: dadosRaw, velocidade: 15 }; }
 
+                    // 1. VERIFICA SE HÁ MUDANÇA DE VIDEO
+                    if (dados.videoId && dados.videoId !== currentVideoId) {
+                        currentVideoId = dados.videoId;
+                        if (player && player.loadVideoById) {
+                            console.log("Mudando música para: " + currentVideoId);
+                            // Carrega o vídeo mas deixa pausado (só toca no gatilho 'te amo')
+                            player.cueVideoById(currentVideoId);
+                            // Se já estiver tocando (modo festa ativo), dá play direto
+                            if (musicaTocando) player.playVideo();
+                        }
+                    }
+
+                    // 2. BOTÃO MANUAL DE CONFETE
+                    // Se o token que veio do banco for maior que o ultimo que vimos, dispara!
+                    if (dados.confeteToken && dados.confeteToken > lastConfeteToken) {
+                        lastConfeteToken = dados.confeteToken;
+                        console.log("Comando manual de confete recebido!");
+                        dispararConfete();
+                    }
+
+                    // 3. ATUALIZAÇÃO DE TEXTO E LÓGICA 'TE AMO'
                     var novoTexto = dados.texto ? dados.texto : textoPadrao;
 
                     if (novoTexto !== textoAtual) {
@@ -204,11 +221,13 @@
 
                         if (tLimpo === "teamo") {
                             console.log("Modo Te Amo: ATIVADO");
-                            dispararConfete();
+                            dispararConfete(); // Confete do modo automático
                             gifEl.style.display = "block";
 
                             if (audioLiberado && player && player.playVideo && !musicaTocando) {
-                                player.seekTo(START_TIME);
+                                // Se for o Overmono, pula pra 14s. Se for outro, começa do 0.
+                                var seekTo = (currentVideoId === "SRVxRUJxITY") ? 14 : 0;
+                                player.seekTo(seekTo);
                                 player.setVolume(100);
                                 player.playVideo();
                                 musicaTocando = true;
@@ -224,6 +243,7 @@
                         }
                     }
 
+                    // 4. VELOCIDADE
                     if (dados.velocidade && String(dados.velocidade) !== String(velocidadeAtual)) {
                         velocidadeAtual = dados.velocidade;
                         document.getElementById('texto').style.animationDuration = velocidadeAtual + 's';

@@ -1,109 +1,80 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Controle - Parabéns Juliana</title>
+    <title>Painel da Juliana</title>
     <style>
-        body {
-            font-family: sans-serif;
-            background: #222;
-            color: #fff;
-            padding: 2rem;
-            max-width: 600px;
-            margin: 0 auto;
-        }
+        body { font-family: sans-serif; background: #222; color: #fff; padding: 2rem; max-width: 600px; margin: 0 auto; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; margin-top: 15px; }
+        input { padding: 15px; font-size: 1.1rem; width: 100%; box-sizing: border-box; border-radius: 5px; border: none; }
+        
+        /* Botão Padrão */
+        .btn-update { padding: 15px 30px; font-size: 1.2rem; width: 100%; background: #0f0; color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 20px; }
+        .btn-update:active { background: #0a0; }
 
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
+        /* Botão de Confete (Diferente) */
+        .btn-party { padding: 15px 30px; font-size: 1.2rem; width: 100%; background: #ff00ff; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 15px; }
+        .btn-party:active { background: #d000d0; }
 
-        input {
-            padding: 15px;
-            font-size: 1.2rem;
-            width: 100%;
-            box-sizing: border-box;
-            border-radius: 5px;
-            border: 1px solid #444;
-            background: #333;
-            color: #fff;
-            margin-bottom: 20px;
-            transition: outline 0.2s;
-        }
-
-        input:focus {
-            outline: 2px solid #0f0;
-            outline-offset: 2px;
-        }
-
-        button {
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            width: 100%;
-            background: #0f0;
-            color: #000;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.2s, outline 0.2s;
-        }
-
-        button:hover {
-            background: #0c0;
-        }
-
-        button:focus {
-            outline: 3px solid #fff;
-            outline-offset: 2px;
-        }
-
-        button:active {
-            background: #0a0;
-        }
-
-        .status {
-            margin-top: 20px;
-            color: #aaa;
-            text-align: center;
-        }
+        .status { margin-top: 20px; color: #aaa; text-align: center; }
+        .hint { font-size: 0.8rem; color: #888; margin-bottom: 5px; }
     </style>
 </head>
-
 <body>
-    <h1>Configurar letreiro</h1>
+    <h1>Configurar Festa 🎉</h1>
+    
+    <label>Mensagem:</label>
+    <input type="text" id="inputTexto" placeholder="Digite a mensagem..." value="Parabéns Juliana 🎉 🎂 🥳 🥂 🍾 🎊 🎈 🎁 💖 💝">
+    
+    <label>Música (Link do YouTube):</label>
+    <p class="hint">Cole o link completo. Ex: https://www.youtube.com/watch?v=SRVxRUJxITY</p>
+    <input type="text" id="inputYoutube" placeholder="Cole o link aqui..." value="https://www.youtube.com/watch?v=SRVxRUJxITY">
 
-    <label for="inputTexto">Mensagem:</label>
-    <input type="text" id="inputTexto" placeholder="Digite a mensagem..."
-        value="Parabéns Juliana 🎉 🎂 🥳 🥂 🍾 🎊 🎈 🎁 💖 💝">
-
-    <label for="inputVelocidade">Velocidade (segundos):</label>
+    <label>Velocidade (segundos):</label>
     <input type="number" id="inputVelocidade" value="15" min="5" max="100">
 
-    <button onclick="enviarDados()">ATUALIZAR TUDO</button>
+    <button class="btn-update" onclick="enviarDados(false)">ATUALIZAR TUDO</button>
+    
+    <hr style="border-color: #444; margin: 25px 0;">
+    
+    <button class="btn-party" onclick="enviarDados(true)">SOLTAR CONFETES AGORA 🎊</button>
+
     <p class="status" id="status">Aguardando...</p>
 
     <script>
         // --- CONFIGURAÇÃO ---
-        const BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg";
+        const BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg"; 
         const KEY = "mensagem";
         const URL = `https://kvdb.io/${BUCKET_ID}/${KEY}`;
 
-        async function enviarDados() {
+        // Função auxiliar para extrair o ID do vídeo de qualquer link do YouTube
+        function extrairIdYoutube(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        async function enviarDados(apenasConfete) {
             const texto = document.getElementById('inputTexto').value;
             const velocidade = document.getElementById('inputVelocidade').value;
-            const btn = document.querySelector('button');
+            const linkYoutube = document.getElementById('inputYoutube').value;
             const status = document.getElementById('status');
+            
+            // Extrai o ID limpo (ou usa um padrão se falhar)
+            let videoId = extrairIdYoutube(linkYoutube);
+            if (!videoId) videoId = "SRVxRUJxITY"; // Fallback para Overmono
 
+            // Monta o pacote de dados
             const dados = {
                 texto: texto,
-                velocidade: velocidade
+                velocidade: velocidade,
+                videoId: videoId,
+                // Se apertou o botão de confete, gera um número novo (timestamp).
+                // O celular vai ver que esse número mudou e soltar o confete.
+                confeteToken: apenasConfete ? Date.now() : 0 
             };
 
-            btn.disabled = true;
             status.innerText = "Enviando...";
 
             try {
@@ -111,16 +82,23 @@
                     method: 'POST',
                     body: JSON.stringify(dados)
                 });
-                status.innerText = "Sucesso! O letreiro vai atualizar em instantes.";
-                status.style.color = "#0f0";
+                
+                if (apenasConfete) {
+                    status.innerText = "BUM! Confetes disparados! 🎉";
+                    status.style.color = "#ff00ff";
+                } else {
+                    status.innerText = "Dados atualizados com sucesso!";
+                    status.style.color = "#0f0";
+                }
+
+                // Limpa mensagem após 3s
+                setTimeout(() => { status.innerText = "Pronto."; status.style.color = "#aaa"; }, 3000);
+
             } catch (error) {
                 status.innerText = "Erro ao enviar.";
                 console.error(error);
-            } finally {
-                btn.disabled = false;
             }
         }
     </script>
 </body>
-
 </html>

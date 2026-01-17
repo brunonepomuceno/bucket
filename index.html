@@ -50,6 +50,50 @@
             box-shadow: 0 0 50px rgba(0, 255, 0, 0.5);
         }
 
+        /* --- QR CODE AR --- */
+        #qr-ar-container {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 100;
+            /* Fica na frente do GIF */
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            /* Começa escondido */
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+            animation: pulse 2s infinite;
+        }
+
+        #qr-img {
+            width: 120px;
+            height: 120px;
+        }
+
+        #qr-text {
+            font-family: sans-serif;
+            font-size: 10px;
+            font-weight: bold;
+            color: #000;
+            margin-top: 5px;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
         #overlay {
             position: fixed;
             top: 0;
@@ -117,7 +161,14 @@
         </div>
     </div>
 
-    <a id="botao-secreto" href="https://brunonepomuceno.github.io/bucket/admin" title="Ir para Admin"></a>
+    <a id="botao-secreto" href="https://brunonepomuceno.github.io/bucket/admin.html" title="Ir para Admin"></a>
+
+    <div id="qr-ar-container">
+        <img id="qr-img"
+            src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://brunonepomuceno.github.io/bucket/ar.html"
+            alt="QR Code AR">
+        <div id="qr-text">APONTE A CÂMERA 📸</div>
+    </div>
 
     <div id="player"></div>
     <img id="gif-surpresa" src="juliana.gif" alt="Surpresa">
@@ -129,19 +180,16 @@
     </div>
 
     <script>
-        // --- CONFIGURAÇÃO ---
         var BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg";
         var KEY = "mensagem";
         var URL_BASE = "https://kvdb.io/" + BUCKET_ID + "/" + KEY;
 
-        // Variáveis de Estado
         var textoPadrao = "Parabéns Juliana 🎉 🎂 🥳 🥂 🍾 🎊 🎈 🎁 💖 💝";
         var textoAtual = textoPadrao;
         var velocidadeAtual = "";
 
-        // Estado da Música e Confete
-        var currentVideoId = "SRVxRUJxITY"; // ID padrão (Overmono)
-        var lastConfeteToken = 0; // Para controlar o botão de confete manual
+        var currentVideoId = "SRVxRUJxITY";
+        var lastConfeteToken = 0;
 
         var player;
         var audioLiberado = false;
@@ -189,27 +237,19 @@
                     try { dados = JSON.parse(dadosRaw); }
                     catch (e) { dados = { texto: dadosRaw, velocidade: 15 }; }
 
-                    // 1. VERIFICA SE HÁ MUDANÇA DE VIDEO
                     if (dados.videoId && dados.videoId !== currentVideoId) {
                         currentVideoId = dados.videoId;
                         if (player && player.loadVideoById) {
-                            console.log("Mudando música para: " + currentVideoId);
-                            // Carrega o vídeo mas deixa pausado (só toca no gatilho 'te amo')
                             player.cueVideoById(currentVideoId);
-                            // Se já estiver tocando (modo festa ativo), dá play direto
                             if (musicaTocando) player.playVideo();
                         }
                     }
 
-                    // 2. BOTÃO MANUAL DE CONFETE
-                    // Se o token que veio do banco for maior que o ultimo que vimos, dispara!
                     if (dados.confeteToken && dados.confeteToken > lastConfeteToken) {
                         lastConfeteToken = dados.confeteToken;
-                        console.log("Comando manual de confete recebido!");
                         dispararConfete();
                     }
 
-                    // 3. ATUALIZAÇÃO DE TEXTO E LÓGICA 'TE AMO'
                     var novoTexto = dados.texto ? dados.texto : textoPadrao;
 
                     if (novoTexto !== textoAtual) {
@@ -218,14 +258,16 @@
 
                         var tLimpo = textoAtual.toLowerCase().replace(/\s/g, '');
                         var gifEl = document.getElementById('gif-surpresa');
+                        var qrEl = document.getElementById('qr-ar-container');
 
+                        // --- LÓGICA DO GATILHO COMPLETA ---
                         if (tLimpo === "teamo") {
                             console.log("Modo Te Amo: ATIVADO");
-                            dispararConfete(); // Confete do modo automático
+                            dispararConfete();
                             gifEl.style.display = "block";
+                            qrEl.style.display = "block"; // MOSTRA O QR CODE
 
                             if (audioLiberado && player && player.playVideo && !musicaTocando) {
-                                // Se for o Overmono, pula pra 14s. Se for outro, começa do 0.
                                 var seekTo = (currentVideoId === "SRVxRUJxITY") ? 14 : 0;
                                 player.seekTo(seekTo);
                                 player.setVolume(100);
@@ -235,6 +277,7 @@
                         } else {
                             console.log("Modo Te Amo: DESATIVADO");
                             gifEl.style.display = "none";
+                            qrEl.style.display = "none"; // ESCONDE O QR CODE
 
                             if (musicaTocando && player && player.pauseVideo) {
                                 player.pauseVideo();
@@ -243,7 +286,6 @@
                         }
                     }
 
-                    // 4. VELOCIDADE
                     if (dados.velocidade && String(dados.velocidade) !== String(velocidadeAtual)) {
                         velocidadeAtual = dados.velocidade;
                         document.getElementById('texto').style.animationDuration = velocidadeAtual + 's';

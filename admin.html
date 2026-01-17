@@ -1,50 +1,157 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel da Juliana</title>
     <style>
-        body { font-family: sans-serif; background: #222; color: #fff; padding: 2rem; max-width: 600px; margin: 0 auto; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; margin-top: 15px; }
-        input { padding: 15px; font-size: 1.1rem; width: 100%; box-sizing: border-box; border-radius: 5px; border: none; }
-        
-        /* Botão Padrão */
-        .btn-update { padding: 15px 30px; font-size: 1.2rem; width: 100%; background: #0f0; color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 20px; }
-        .btn-update:active { background: #0a0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 2rem 1rem;
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
 
-        /* Botão de Confete (Diferente) */
-        .btn-party { padding: 15px 30px; font-size: 1.2rem; width: 100%; background: #ff00ff; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 15px; }
-        .btn-party:active { background: #d000d0; }
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #0f0;
+        }
 
-        .status { margin-top: 20px; color: #aaa; text-align: center; }
-        .hint { font-size: 0.8rem; color: #888; margin-bottom: 5px; }
+        .field-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+
+        input {
+            padding: 14px;
+            font-size: 1rem;
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background: #2a2a2a;
+            color: #fff;
+            transition: all 0.2s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #0f0;
+            box-shadow: 0 0 0 3px rgba(0, 255, 0, 0.2);
+        }
+
+        .btn-container {
+            margin-top: 2rem;
+        }
+
+        button {
+            padding: 16px;
+            font-size: 1.1rem;
+            width: 100%;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .btn-update {
+            background: #0f0;
+            color: #000;
+            margin-bottom: 1rem;
+        }
+
+        .btn-update:hover {
+            background: #0d0;
+            transform: translateY(-1px);
+        }
+
+        .btn-update:active {
+            transform: translateY(0);
+            background: #0c0;
+        }
+
+        .btn-party {
+            background: #ff00ff;
+            color: #fff;
+        }
+
+        .btn-party:hover {
+            background: #e600e6;
+            transform: translateY(-1px);
+        }
+
+        .btn-party:active {
+            transform: translateY(0);
+            background: #cc00cc;
+        }
+
+        .status {
+            margin-top: 1.5rem;
+            color: #888;
+            text-align: center;
+            font-weight: 500;
+            min-height: 1.5rem;
+        }
+
+        .hint {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #333;
+            margin: 2rem 0;
+        }
     </style>
 </head>
+
 <body>
-    <h1>Configurar Festa 🎉</h1>
-    
-    <label>Mensagem:</label>
-    <input type="text" id="inputTexto" placeholder="Digite a mensagem..." value="Parabéns Juliana 🎉 🎂 🥳 🥂 🍾 🎊 🎈 🎁 💖 💝">
-    
-    <label>Música (Link do YouTube):</label>
-    <p class="hint">Cole o link completo. Ex: https://www.youtube.com/watch?v=SRVxRUJxITY</p>
-    <input type="text" id="inputYoutube" placeholder="Cole o link aqui..." value="https://www.youtube.com/watch?v=SRVxRUJxITY">
+    <h1>Configurar festa 🎉</h1>
 
-    <label>Velocidade (segundos):</label>
-    <input type="number" id="inputVelocidade" value="15" min="5" max="100">
+    <div class="field-group">
+        <label for="inputTexto">Mensagem:</label>
+        <input type="text" id="inputTexto" placeholder="Digite a mensagem..."
+            value="Parabéns Juliana 🎉 🎂 🥳 🥂 🍾 🎊 🎈 🎁 💖 💝">
+    </div>
 
-    <button class="btn-update" onclick="enviarDados(false)">ATUALIZAR TUDO</button>
-    
-    <hr style="border-color: #444; margin: 25px 0;">
-    
-    <button class="btn-party" onclick="enviarDados(true)">SOLTAR CONFETES AGORA 🎊</button>
+    <div class="field-group">
+        <label for="inputYoutube">Música (link do youTube):</label>
+        <input type="text" id="inputYoutube" placeholder="Cole o link aqui..."
+            value="https://www.youtube.com/watch?v=SRVxRUJxITY">
+        <p class="hint">Cole o link completo. Ex: https://www.youtube.com/watch?v=SRVxRUJxITY</p>
+    </div>
+
+    <div class="field-group">
+        <label for="inputVelocidade">Velocidade (segundos):</label>
+        <input type="number" id="inputVelocidade" value="15" min="5" max="100">
+    </div>
+
+    <div class="btn-container">
+        <button class="btn-update" onclick="enviarDados(false)">ATUALIZAR TUDO</button>
+        <hr>
+        <button class="btn-party" onclick="enviarDados(true)">SOLTAR CONFETES AGORA 🎊</button>
+    </div>
 
     <p class="status" id="status">Aguardando...</p>
 
     <script>
         // --- CONFIGURAÇÃO ---
-        const BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg"; 
+        const BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg";
         const KEY = "mensagem";
         const URL = `https://kvdb.io/${BUCKET_ID}/${KEY}`;
 
@@ -60,7 +167,7 @@
             const velocidade = document.getElementById('inputVelocidade').value;
             const linkYoutube = document.getElementById('inputYoutube').value;
             const status = document.getElementById('status');
-            
+
             // Extrai o ID limpo (ou usa um padrão se falhar)
             let videoId = extrairIdYoutube(linkYoutube);
             if (!videoId) videoId = "SRVxRUJxITY"; // Fallback para Overmono
@@ -72,7 +179,7 @@
                 videoId: videoId,
                 // Se apertou o botão de confete, gera um número novo (timestamp).
                 // O celular vai ver que esse número mudou e soltar o confete.
-                confeteToken: apenasConfete ? Date.now() : 0 
+                confeteToken: apenasConfete ? Date.now() : 0
             };
 
             status.innerText = "Enviando...";
@@ -82,7 +189,7 @@
                     method: 'POST',
                     body: JSON.stringify(dados)
                 });
-                
+
                 if (apenasConfete) {
                     status.innerText = "BUM! Confetes disparados! 🎉";
                     status.style.color = "#ff00ff";
@@ -101,4 +208,5 @@
         }
     </script>
 </body>
+
 </html>

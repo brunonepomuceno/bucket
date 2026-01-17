@@ -102,10 +102,9 @@
 </head>
 
 <body>
-    <div id="overlay" onclick="iniciarSistema()" onkeydown="if(event.key==='Enter'||event.key===' ') iniciarSistema()"
-        role="button" tabindex="0" aria-label="Iniciar Sistema">
-        <div>TOQUE PARA INICIAR<br><span style="font-size:12px; color:#666">(Necessário para liberar
-                o áudio)</span></div>
+    <div id="overlay" onclick="iniciarSistema()">
+        <div>TOQUE PARA INICIAR<br><span style="font-size:12px; color:#666">(Necessário para liberar o áudio)</span>
+        </div>
     </div>
 
     <div id="player"></div>
@@ -123,9 +122,12 @@
         var BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg";
         var KEY = "mensagem";
         var URL_BASE = "https://kvdb.io/" + BUCKET_ID + "/" + KEY;
-        var MUSIC_ID = "DOWyEY-VfIw";
 
-        // Estado Inicial
+        // --- ATUALIZAÇÃO DA MÚSICA ---
+        // Overmono - So U Kno
+        var MUSIC_ID = "SRVxRUJxITY";
+        var START_TIME = 14; // Começa aos 14 segundos
+
         var textoPadrao = "Parabéns Juliana 🎉 🎂 🥳 🥂 🍾 🎊 🎈 🎁 💖 💝";
         var textoAtual = textoPadrao;
         var velocidadeAtual = "";
@@ -150,10 +152,11 @@
             audioLiberado = true;
             // "Acorda" o player de áudio do Android
             if (player && player.playVideo) {
-                player.mute(); player.playVideo();
-                setTimeout(function () { player.pauseVideo(); player.unMute(); }, 500);
+                player.mute();
+                player.playVideo();
+                // Pequeno delay para garantir o buffer antes de pausar
+                setTimeout(function () { player.pauseVideo(); player.unMute(); }, 1000);
             }
-            // Força uma verificação imediata
             verificarDados();
         }
 
@@ -168,52 +171,42 @@
         }
 
         function verificarDados() {
-            // ANTI-CACHE NA REQUISIÇÃO: Adiciona timestamp aleatório
             var urlComCacheBuster = URL_BASE + "?t=" + new Date().getTime();
 
-            fetch(urlComCacheBuster, { cache: "no-store" }) // Força no-store
+            fetch(urlComCacheBuster, { cache: "no-store" })
                 .then(function (r) { return r.text(); })
                 .then(function (dadosRaw) {
                     var dados;
                     try { dados = JSON.parse(dadosRaw); }
                     catch (e) { dados = { texto: dadosRaw, velocidade: 15 }; }
 
-                    // Verifica se temos dados válidos, senão usa o padrão
                     var novoTexto = dados.texto ? dados.texto : textoPadrao;
 
                     if (novoTexto !== textoAtual) {
                         textoAtual = novoTexto;
                         document.getElementById('texto').innerText = textoAtual;
 
-                        // --- NORMALIZAÇÃO DO GATILHO ---
-                        // Remove espaços em branco e deixa minúsculo
-                        // Ex: "Te Amo" vira "teamo", "te amo" vira "teamo"
+                        // Normalização do texto (remove espaços e lowercase)
                         var tLimpo = textoAtual.toLowerCase().replace(/\s/g, '');
                         var gifEl = document.getElementById('gif-surpresa');
 
+                        // --- GATILHO "TE AMO" ---
                         if (tLimpo === "teamo") {
-                            // === ESTADO: AMOR ATIVADO ===
                             console.log("Modo Te Amo: ATIVADO");
-
-                            // 1. Solta Confete
                             dispararConfete();
-
-                            // 2. Mostra GIF
                             gifEl.style.display = "block";
 
-                            // 3. Toca Música
                             if (audioLiberado && player && player.playVideo && !musicaTocando) {
-                                player.seekTo(0); player.setVolume(100); player.playVideo();
+                                // Pula para o segundo 14 e toca
+                                player.seekTo(START_TIME);
+                                player.setVolume(100);
+                                player.playVideo();
                                 musicaTocando = true;
                             }
                         } else {
-                            // === ESTADO: AMOR DESATIVADO (LIMPEZA) ===
                             console.log("Modo Te Amo: DESATIVADO");
-
-                            // 1. Esconde GIF
                             gifEl.style.display = "none";
 
-                            // 2. Para Música
                             if (musicaTocando && player && player.pauseVideo) {
                                 player.pauseVideo();
                                 musicaTocando = false;
@@ -221,7 +214,6 @@
                         }
                     }
 
-                    // Atualiza velocidade
                     if (dados.velocidade && String(dados.velocidade) !== String(velocidadeAtual)) {
                         velocidadeAtual = dados.velocidade;
                         document.getElementById('texto').style.animationDuration = velocidadeAtual + 's';
@@ -230,7 +222,6 @@
                 .catch(function (e) { console.log("Erro de conexão: " + e); });
         }
 
-        // Verifica a cada 5 segundos
         setInterval(verificarDados, 5000);
     </script>
 </body>

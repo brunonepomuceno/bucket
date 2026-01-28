@@ -148,6 +148,26 @@
         <input type="number" id="inputVelocidade" value="15" min="5" max="100">
     </div>
 
+    <!-- CONFIGURAÇÃO DE BUCKET -->
+    <hr>
+    <div class="field-group">
+        <label for="inputBucket">ID do Bucket (Servidor):</label>
+        <input type="text" id="inputBucket" placeholder="Nx4..." style="border-color: #666;">
+        <p class="hint">Padrão: Nx4eX6XbVusH98XQ86tkpg</p>
+        <div style="display:flex; justify-content:space-between; margin-top:10px;">
+            <a href="https://kvdb.io" target="_blank" style="color:#0f0; text-decoration:none; font-size:0.8rem;">+
+                Criar Novo Bucket</a>
+            <button onclick="salvarBucket()"
+                style="width: auto; padding: 5px 15px; font-size: 0.8rem; background:#333; color:#fff;">SALVAR
+                ID</button>
+        </div>
+        <div id="quota-warning"
+            style="display:none; color: orange; font-weight:bold; margin-top:10px; border:1px solid orange; padding:5px;">
+            ⚠️ Atenção: Cota de operações acabando! Restam: <span id="quota-lefs">?</span>
+        </div>
+    </div>
+    <hr>
+
     <div class="btn-container">
         <button class="btn-update" onclick="enviarDados(false)">ATUALIZAR TUDO</button>
         <hr>
@@ -158,9 +178,20 @@
 
     <script>
         // --- CONFIGURAÇÃO ---
-        const BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg";
+        const DEFAULT_BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg";
+        // Tenta ler do localStorage, se não tiver usa o default
+        let BUCKET_ID = localStorage.getItem("juliana_bucket_id") || DEFAULT_BUCKET_ID;
+
         const KEY = "mensagem";
-        const URL = `https://kvdb.io/${BUCKET_ID}/${KEY}`;
+        // A URL será construída dinamicamente nas funções para permitir troca imediata
+
+        // Preenche o input de bucket na carga
+        document.getElementById('inputBucket').value = BUCKET_ID;
+
+        function getUrl() {
+            return `https://kvdb.io/${BUCKET_ID}/${KEY}`;
+        }
+
 
         // Função auxiliar para extrair o ID do vídeo de qualquer link do YouTube
         function extrairIdYoutube(url) {
@@ -182,9 +213,10 @@
                 // 1. Ler estado atual para não perder a fila
                 let dadosAtuais = {};
                 try {
-                    const r = await fetch(URL);
+                    const r = await fetch(getUrl());
                     if (r.ok) {
                         dadosAtuais = await r.json();
+                        verificarCota(r); // Checa cota na leitura também
                     }
                 } catch (e) {
                     console.log("KVDB vazio ou erro de leitura", e);
@@ -270,6 +302,68 @@
                 status.innerText = "Erro ao enviar.";
                 console.error(error);
             }
+        }
+
+        // Função para verificar cota nos headers
+        function verificarCota(response) {
+            // Headers comuns: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
+            const remaining = response.headers.get("X-RateLimit-Remaining");
+
+            if (remaining) {
+                const limit = parseInt(remaining, 10);
+                const warningBox = document.getElementById('quota-warning');
+
+                if (limit < 1000) {
+                    warningBox.style.display = 'block';
+                    document.getElementById('quota-lefs').innerText = limit;
+
+                    if (limit < 100) {
+                        warningBox.style.color = 'red';
+                        warningBox.style.borderColor = 'red';
+                        warningBox.innerHTML = `🚨 CRÍTICO: Cota Esgotada (${limit} restantes).<br>Troque o Bucket ID imediatamente!`;
+                    }
+                } else {
+                    warningBox.style.display = 'none';
+                }
+            } else {
+                if (response.status === 429) {
+                    const warningBox = document.getElementById('quota-warning');
+                    warningBox.style.display = 'block';
+                    warningBox.style.color = 'red';
+                    warningBox.innerHTML = `🚨 ERRO 429: Cota Excedida. O sistema parou.<br>Crie um novo Bucket e troque o ID acima.`;
+                }
+            }
+        }
+
+        async function salvarBucket() {
+            const novoId = document.getElementById('inputBucket').value.trim();
+            if (!novoId) return alert("ID inválido");
+
+            if (novoId === BUCKET_ID) return alert("Esse já é o ID atual.");
+
+            if (!confirm("Atenção: Ao trocar o ID, enviaremos um aviso para conectar todas as telas ao novo Bucket. Confirma?")) return;
+
+            // 1. Enviar Kill Switch/Broadcast no bucket ANTIGO
+            const dadosTroca = {
+                type: "config_change",
+                newBucketId: novoId,
+                timestamp: Date.now()
+            };
+
+            try {
+                // Tenta avisar no bucket antigo
+                await fetch(getUrl(), {
+                    method: 'POST',
+                    body: JSON.stringify(dadosTroca)
+                });
+            } catch (e) {
+                console.error("Não foi possível avisar no bucket antigo, trocando localmente apenas.");
+            }
+
+            // 2. Salvar novo e recarregar
+            localStorage.setItem("juliana_bucket_id", novoId);
+            alert("ID Salvo! Recarregando...");
+            window.location.reload();
         }
     </script>
 </body>

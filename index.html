@@ -259,7 +259,11 @@
     </div>
 
     <script>
-        var BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg";
+        // --- CONFIGURAÇÃO ---
+        const DEFAULT_BUCKET_ID = "Nx4eX6XbVusH98XQ86tkpg";
+        // Tenta ler do localStorage, se não tiver usa o default
+        let BUCKET_ID = localStorage.getItem("juliana_bucket_id") || DEFAULT_BUCKET_ID;
+
         var KEY = "mensagem";
         var URL_BASE = "https://kvdb.io/" + BUCKET_ID + "/" + KEY;
 
@@ -533,6 +537,13 @@
                     if (dados.confeteToken && dados.confeteToken > lastConfeteToken) {
                         lastConfeteToken = dados.confeteToken;
                         dispararConfete();
+                    }
+
+                    if (dados.type === "config_change" && dados.newBucketId) {
+                        console.log("Comando de troca de bucket recebido!", dados.newBucketId);
+                        localStorage.setItem("juliana_bucket_id", dados.newBucketId);
+                        window.location.reload();
+                        return; // Para execução
                     }
 
                     // Processa fila

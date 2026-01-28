@@ -10,7 +10,8 @@
     <meta http-equiv="Expires" content="0">
 
     <title>Parabéns Juliana</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎂</text></svg>"> 
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎂</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         body {
@@ -153,6 +154,71 @@
                 transform: translate3d(-100%, 0, 0);
             }
         }
+
+        /* --- REMETENTE E TIMER --- */
+        #topo-info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 80;
+            pointer-events: none;
+            font-family: sans-serif;
+        }
+
+        #remetente-box {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            color: #fff;
+            display: none;
+            /* Só mostra se tiver sender */
+            animation: slide-down 0.5s ease-out;
+        }
+
+        #remetente-label {
+            font-size: 12px;
+            color: #aaa;
+            text-transform: uppercase;
+        }
+
+        #remetente-nome {
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        #timer-box {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px 10px;
+            border-radius: 15px;
+            color: #fff;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            opacity: 0.7;
+            display: none;
+            /* Só mostra se tiver fila */
+        }
+
+        #timer-icon {
+            font-size: 14px;
+        }
+
+        @keyframes slide-down {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 
@@ -177,6 +243,18 @@
     <div class="marquee-container">
         <div class="marquee-text" id="texto">
             Parabéns Juliana 🎉 🎂 🥳 🥂 🍾 🎊 🎈 🎁 💖 💝
+        </div>
+    </div>
+
+    <!-- UI DE FILA -->
+    <div id="topo-info">
+        <div id="remetente-box">
+            <div id="remetente-label">Mensagem de</div>
+            <div id="remetente-nome" id="nome-remetente">Anônimo</div>
+        </div>
+        <div id="timer-box">
+            <span id="timer-icon">⏳</span>
+            <span id="timer-text">Próxima em 10s</span>
         </div>
     </div>
 
@@ -208,9 +286,48 @@
             });
         }
 
+        function toggleFullScreen() {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                var elem = document.documentElement;
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) {
+                    elem.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }
+        }
+
+        var clickCount = 0;
+        var clickTimer = null;
+        document.addEventListener('click', function () {
+            clickCount++;
+            if (clickTimer) clearTimeout(clickTimer);
+            clickTimer = setTimeout(function () { clickCount = 0; }, 500);
+            if (clickCount === 3) {
+                toggleFullScreen();
+                clickCount = 0;
+            }
+        });
+
         function iniciarSistema() {
             document.getElementById('overlay').style.display = 'none';
             audioLiberado = true;
+
+            // Força tela cheia no início
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                toggleFullScreen();
+            }
+
             if (player && player.playVideo) {
                 player.mute(); player.playVideo();
                 setTimeout(function () { player.pauseVideo(); player.unMute(); }, 1000);
@@ -295,7 +412,244 @@
                 .catch(function (e) { console.log("Erro de conexão: " + e); });
         }
 
-        setInterval(verificarDados, 5000);
+        // --- VARIÁVEIS DE CONTROLE DA FILA ---
+        var cycleCount = 0; // Quantas vezes a mensagem atual já passou
+        var maxCycles = 3;  // Quantas vezes deve passar
+
+        var filaLocal = []; // Cópia local da fila
+        var mensagemAtualObj = null; // Objeto completo da mensagem tocando agora
+
+        var tempoInicioCiclo = 0; // Para ajudar no timer estimado (opcional, ou usamos CSS events)
+
+        // Elemento do texto
+        var elTexto = document.getElementById('texto');
+
+        // Listener de animação para contar voltas
+        elTexto.addEventListener('animationiteration', function () {
+            cycleCount++;
+            console.log("Ciclo concluído: " + cycleCount);
+
+            // Se completou 3 ciclos e tem mais gente na fila (ou se a fila mudou), vamos para o próximo.
+            // Para simplificar: sempre que der 3 ciclos, tentamos pegar o próximo da fila.
+            if (cycleCount >= maxCycles) {
+                avancarFila();
+            }
+        });
+
+        // Função para avançar a fila
+        function avancarFila() {
+            // Se filaLocal tiver mais de 1 item, removemos o primeiro (que acabou de tocar)
+            // Mas espera: a filaLocal é atualizada pelo polling.
+            // A lógica correta é: remover o item 0 do KVDB.
+
+            // Envia comando para remover o item 0 do KVDB
+            // Porem isso pode causar race conditions se o admin estiver escrevendo.
+            // Uma forma mais segura seria enviar o ID da mensagem para remover, mas não temos IDs únicos robustos (timestamp serve?).
+            // Vamos simplificar: ler, shift, salvar.
+
+            removerItemFilaKVDB();
+
+            cycleCount = 0; // Reseta voltas
+            // A interface vai atualizar quando o polling ler o KVDB atualizado.
+            // Mas para ser instantâneo, podemos atualizar localmente também?
+            // Melhor esperar o polling para garantir sincronia com os dados reais.
+            // Porem, podemos forçar um polling agora.
+            setTimeout(verificarDados, 500);
+        }
+
+        async function removerItemFilaKVDB() {
+            try {
+                // Se só tem 1 item ou nenhum, não removemos se quisermos que fique em loop?
+                // Requisito: "se tiver outra mensagem na fila, a próxima mensagem da fila entra."
+                // Se só tiver 1 mensagem, ela deve continuar tocando indefinidamente?
+                // O comportamento "sobrescreve" sugere que mensagens antigas somem.
+                // Vou assumir: se tiver > 0 itens, removemos o que acabou de tocar, A MENOS que seja o único.
+                // Se for o único, ele continua lá para sempre até vir outro?
+                // Ou removemos e voltamos para o padrão?
+                // Geralmente filas de mensagem em festa: se acaba a fila, mostra mensagem padrão ou repete a última?
+                // O código atual repetia a última.
+                // Se eu remover o item 0 e a fila ficar vazia, o codigo deve tratar "fila vazia" como "mostrar padrão" ou "manter ultima"?
+
+                // Vamos ler o KVDB primeiro
+                let r = await fetch(URL_BASE + "?t=" + new Date().getTime());
+                let dados = await r.json();
+
+                if (dados.queue && dados.queue.length > 1) {
+                    // Tem mais alguém na fila, remove o atual e salva
+                    dados.queue.shift();
+                    await fetch(URL_BASE, {
+                        method: 'POST',
+                        body: JSON.stringify(dados)
+                    });
+                    console.log("Item removido da fila, avançando.");
+                } else {
+                    // Se é o único ou vazio, não fazemos nada, deixa rodando loop infinito
+                    // cycleCount vai continuar subindo, precisamos resetar ele pra não estourar ou apenas ignorar?
+                    cycleCount = 0; // Reseta para continuar contando ciclos (invisivelmente)
+                }
+
+            } catch (e) { console.error("Erro ao avançar fila", e); }
+        }
+
+
+        // Atualiza a estimativa de tempo no Timer UI
+        function atualizarTimerUI() {
+            var box = document.getElementById('timer-box');
+            var txt = document.getElementById('timer-text');
+
+            // Se a filaLocal tiver > 1 item, mostra timer
+            if (filaLocal.length > 1) {
+                box.style.display = 'flex';
+                // Calculo estimado: (MaxCycles - cycleCount) * Duração + Parte fracionária da animação atual
+                // É difícil pegar a parte fracionária exata sem hackear computed styles.
+                // Vamos simplificar: Voltants Restantes * Velocidade
+
+                let ciclosRestantes = maxCycles - cycleCount;
+                if (ciclosRestantes < 1) ciclosRestantes = 1;
+
+                let vel = parseFloat(velocidadeAtual) || 15;
+                let tempoRestante = Math.ceil(ciclosRestantes * vel); // Aproximação grosseira
+
+                txt.innerText = "Próxima em ~" + tempoRestante + "s";
+            } else {
+                box.style.display = 'none';
+            }
+        }
+
+        // Atualiza timer a cada segundo
+        setInterval(atualizarTimerUI, 1000);
+
+        function verificarDados() {
+            var urlComCacheBuster = URL_BASE + "?t=" + new Date().getTime();
+
+            fetch(urlComCacheBuster, { cache: "no-store" })
+                .then(function (r) { return r.text(); })
+                .then(function (dadosRaw) {
+                    var dados;
+                    try { dados = JSON.parse(dadosRaw); }
+                    catch (e) { dados = { queue: [], confeteToken: 0 }; } // Fallback leve
+
+                    // Processa confete
+                    if (dados.confeteToken && dados.confeteToken > lastConfeteToken) {
+                        lastConfeteToken = dados.confeteToken;
+                        dispararConfete();
+                    }
+
+                    // Processa fila
+                    // Se não tiver queue mas tiver campos antigos (migração), cria estrutura na memória
+                    if (!dados.queue && dados.texto) {
+                        dados.queue = [{
+                            text: dados.texto,
+                            speed: dados.velocidade || 15,
+                            videoId: dados.videoId,
+                            sender: ""
+                        }];
+                    }
+                    if (!dados.queue) dados.queue = [];
+
+                    filaLocal = dados.queue; // Atualiza fila local
+
+                    // Define qual mensagem mostrar
+                    let itemParaMostrar = null;
+
+                    if (filaLocal.length > 0) {
+                        itemParaMostrar = filaLocal[0];
+                    } else {
+                        // Fila vazia -> Default
+                        itemParaMostrar = {
+                            text: textoPadrao,
+                            speed: 15,
+                            videoId: "SRVxRUJxITY",
+                            sender: ""
+                        };
+                    }
+
+                    // Verifica se mudou o conteúdo em relação ao que está na tela
+                    // Se o item 0 mudou (ex: shift na fila), atualizamos
+                    // Usamos timestamp ou comparação direta de texto para detectar mudança
+
+                    // Compara com mensagemAtualObj
+                    let mudou = false;
+                    if (!mensagemAtualObj) mudou = true;
+                    else if (mensagemAtualObj.text !== itemParaMostrar.text) mudou = true;
+                    else if (mensagemAtualObj.videoId !== itemParaMostrar.videoId) mudou = true;
+
+                    if (mudou) {
+                        mensagemAtualObj = itemParaMostrar;
+
+                        // Atualiza Texto
+                        textoAtual = mensagemAtualObj.text;
+                        document.getElementById('texto').innerText = textoAtual;
+
+                        // Atualiza Velocidade
+                        var novaVel = mensagemAtualObj.speed || 15;
+                        if (String(novaVel) !== String(velocidadeAtual)) {
+                            velocidadeAtual = novaVel;
+                            document.getElementById('texto').style.animationDuration = velocidadeAtual + 's';
+                        }
+
+                        // Atualiza Video
+                        var novoVideo = mensagemAtualObj.videoId;
+                        if (novoVideo && novoVideo !== currentVideoId) {
+                            currentVideoId = novoVideo;
+                            if (player && player.loadVideoById) {
+                                player.cueVideoById(currentVideoId);
+                                if (musicaTocando) player.playVideo();
+                            }
+                        }
+
+                        // Atualiza Remetente UI
+                        var boxRemetente = document.getElementById('remetente-box');
+                        var elNome = document.getElementById('remetente-nome');
+                        if (mensagemAtualObj.sender && mensagemAtualObj.sender.trim() !== "") { // Verifica se sender existe e não é vazio
+                            elNome.innerText = mensagemAtualObj.sender;
+                            boxRemetente.style.display = 'block';
+                        } else {
+                            // Se não tem sender, esconde
+                            boxRemetente.style.display = 'none';
+                        }
+
+                        // Reseta ciclos ao mudar mensagem
+                        cycleCount = 0;
+
+                        // Efeitos especiais (Te Amo)
+                        processarEfeitosTexto(textoAtual);
+                    }
+                })
+                .catch(function (e) { console.log("Erro de conexão: " + e); });
+        }
+
+        function processarEfeitosTexto(txt) {
+            var tLimpo = txt.toLowerCase().replace(/\s/g, '');
+            var gifEl = document.getElementById('gif-surpresa');
+            var qrEl = document.getElementById('qr-ar-container');
+
+            if (tLimpo === "teamo") {
+                console.log("Modo Te Amo: ATIVADO");
+                dispararConfete();
+                gifEl.style.display = "block";
+                qrEl.style.display = "block";
+
+                if (audioLiberado && player && player.playVideo && !musicaTocando) {
+                    var seekTo = (currentVideoId === "SRVxRUJxITY") ? 14 : 0;
+                    player.seekTo(seekTo);
+                    player.setVolume(100);
+                    player.playVideo();
+                    musicaTocando = true;
+                }
+            } else {
+                // Desativa se não for
+                gifEl.style.display = "none";
+                qrEl.style.display = "none";
+
+                if (musicaTocando && player && player.pauseVideo && tLimpo !== "teamo") {
+                    player.pauseVideo();
+                    musicaTocando = false;
+                }
+            }
+        }
+
+        setInterval(verificarDados, 3000); // Polling mais rápido (3s)
     </script>
 </body>
 

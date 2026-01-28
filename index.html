@@ -172,8 +172,6 @@
         #remetente-box {
             background: rgba(0, 0, 0, 0.7);
             padding: 10px 15px;
-            border-radius: 8px;
-            border-left: 4px solid #0f0;
             color: #fff;
             display: none;
             /* Só mostra se tiver sender */
@@ -291,6 +289,17 @@
         function iniciarSistema() {
             document.getElementById('overlay').style.display = 'none';
             audioLiberado = true;
+
+            // Força o navegador a entrar em modo tela cheia
+            var elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) { /* Safari */
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) { /* IE11 */
+                elem.msRequestFullscreen();
+            }
+
             if (player && player.playVideo) {
                 player.mute(); player.playVideo();
                 setTimeout(function () { player.pauseVideo(); player.unMute(); }, 1000);

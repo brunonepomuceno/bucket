@@ -256,9 +256,12 @@
                 } else {
                     status.innerText = "Mensagem enfileirada com sucesso!";
                     status.style.color = "#0f0";
-                    // Limpar input de prioridade para evitar acidentes, mas manter texto base? 
-                    // Melhor limpar o texto pra indicar sucesso no envio de 'chat'.
-                    document.getElementById('inputTexto').value = "";
+
+                    // Reset de campos para o padrão conforme solicitado
+                    document.getElementById('inputNome').value = "";
+                    document.getElementById('inputTexto').value = "Parabéns Juliana 🎉 🎂 🥳 🥂 🍾 🎊 🎈 🎁 💖 💝";
+                    document.getElementById('inputYoutube').value = "https://www.youtube.com/watch?v=SRVxRUJxITY";
+                    document.getElementById('inputVelocidade').value = 15;
                 }
 
                 setTimeout(() => { status.innerText = "Pronto."; status.style.color = "#aaa"; }, 3000);
